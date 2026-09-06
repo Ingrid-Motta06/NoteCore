@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Anotações</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 30px auto; padding: 20px; background-color: #f9f9f9; }
+        h1 { color: #333; text-align: center; }
+        form { display: flex; flex-direction: column; gap: 10px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, textarea, button { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        button { cursor: pointer; border: none; font-weight: bold; }
+        .btn-salvar { background-color: #28a745; color: white; }
+        .btn-salvar:hover { background-color: #218838; }
+        .btn-cancelar { background-color: #6c757d; color: white; margin-top: 5px; }
+        ul { list-style: none; padding: 0; margin-top: 20px; }
+        li { background: white; margin-bottom: 15px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: flex-start; }
+        .conteudo-card { max-width: 80%; }
+        .conteudo-card h3 { margin: 0 0 8px 0; color: #222; }
+        .conteudo-card p { margin: 0; color: #555; white-space: pre-wrap; }
+        .acoes { display: flex; gap: 5px; }
+        .btn-editar { background-color: #ffc107; color: #333; }
+        .btn-excluir { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Gerenciador de Anotações</h1>
+
+    <form id="formAnotacao">
+        <input type="hidden" id="anotacaoId">
+        <input type="text" id="titulo" placeholder="Título da anotação" required>
+        <textarea id="conteudo" placeholder="Escreva sua anotação..." rows="4" required></textarea>
+        <button type="submit" class="btn-salvar" id="btnSubmit">Salvar Anotação</button>
+        <button type="button" class="btn-cancelar" id="btnCancelar" style="display: none;" onclick="limparFormulario()">Cancelar Edição</button>
+    </form>
+
+    <h2>Suas Anotações</h2>
+    <ul id="listaAnotacoes"></ul>
+
+    <script>
+        // Rota atualizada para o seu NoteController
+        const API_URL = '/api/notes';
+
+        async function carregarAnotacoes() {
+            try {
+                const response = await fetch(API_URL);
+                const anotacoes = await response.json();
+                const lista = document.getElementById('listaAnotacoes');
+                lista.innerHTML = '';
+
+                anotacoes.forEach(a => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="conteudo-card">
+                            <h3>${a.title || a.titulo || ''}</h3>
+                            <p>${a.content || a.conteudo || ''}</p>
+                        </div>
+                        <div class="acoes">
+                            <button class="btn-editar" onclick='prepararEdicao(${JSON.stringify(a)})'>Editar</button>
+                            <button class="btn-excluir" onclick="deletarAnotacao(${a.id})">Excluir</button>
+                        </div>
+                    `;
+                    lista.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar anotações:', error);
+            }
+        }
+
+        document.getElementById('formAnotacao').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('anotacaoId').value;
+            const title = document.getElementById('titulo').value;
+            const content = document.getElementById('conteudo').value;
+
+            const metodo = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/${id}` : API_URL;
+
+            try {
+                await fetch(url, {
+                    method: metodo,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+
+                limparFormulario();
+                carregarAnotacoes();
+            } catch (error) {
+                console.error('Erro ao salvar anotação:', error);
+            }
+        });
+
+        function prepararEdicao(anotacao) {
+            document.getElementById('anotacaoId').value = anotacao.id;
+            document.getElementById('titulo').value = anotacao.title || anotacao.titulo || '';
+            document.getElementById('conteudo').value = anotacao.content || anotacao.conteudo || '';
+
+            document.getElementById('btnSubmit').innerText = 'Atualizar Anotação';
+            document.getElementById('btnCancelar').style.display = 'block';
+        }
+
+        function limparFormulario() {
+            document.getElementById('anotacaoId').value = '';
+            document.getElementById('titulo').value = '';
+            document.getElementById('conteudo').value = '';
+
+            document.getElementById('btnSubmit').innerText = 'Salvar Anotação';
+            document.getElementById('btnCancelar').style.display = 'none';
+        }
+
+        async function deletarAnotacao(id) {
+            if (confirm('Deseja realmente excluir esta anotação?')) {
+                try {
+                    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    carregarAnotacoes();
+                } catch (error) {
+                    console.error('Erro ao excluir anotação:', error);
+                }
+            }
+        }
+
+        carregarAnotacoes();
+    </script>
+</body>
+</html>

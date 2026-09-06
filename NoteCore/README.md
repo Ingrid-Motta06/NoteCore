@@ -1,0 +1,2 @@
+# NoteCore
+Gerenciador de Notas

@@ -1,0 +1,17 @@
+### Listar todas as notas
+GET http://localhost:8080/api/notes
+
+### Criar uma nova nota
+POST http://localhost:8080/api/notes
+Content-Type: application/json
+
+{
+  "titulo": "Reunião de Alinhamento",
+  "corpo": "Definir responsabilidades no repositório do Git",
+  "categoria": "Trabalho",
+  "autor": "Líder de Equipe",
+  "tags": ["reuniao", "git", "projeto"]
+}
+
+### Excluir uma nota pelo ID
+DELETE http://localhost:8080/api/notes/1
